@@ -39,7 +39,7 @@ script=script[:a]+(out/'report_view.js').read_text().rstrip()+script[b:]
 assert 'google.script' not in script
 (out/'app.js').write_text(script)
 html=re.sub(r'<script>.*?</script>','<script src="transport.js" defer></script><script src="app.js" defer></script>',html,flags=re.S)
-html=html.replace('src="app.js"','src="app.js?v=3.0.3"')
+html=html.replace('src="app.js"','src="app.js?v=3.0.4"')
 html=html.replace('<head>','<head><title>SVS Individual KPI</title><meta name="referrer" content="no-referrer">',1)
 (out/'index.html').write_text(html)
 (out/'.nojekyll').write_text('')
