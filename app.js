@@ -171,12 +171,42 @@ async function exportPng(){
  if(state.exportUrl)URL.revokeObjectURL(state.exportUrl);const url=URL.createObjectURL(blob);state.exportUrl=url;const link=document.createElement('a');link.href=url;link.download=('SVS_KPI_'+p.round+'_'+p.name).replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_')+'.png';link.target='_self';link.className='button-link';link.id='pngDownload';link.textContent='ดาวน์โหลดภาพ PNG';$('pngDownloadPlaceholder').replaceWith(link);$('reportPngImage').src=url;
 
 }
-function authClear(){clearTimeout(state.autoTimer);sessionStorage.removeItem('svs-session');state.token='';state.boot=null;state.data=null;state.answers={};state.evidenceByKpi={};state.sponsor=null;state.head=null;state.exportReport=null;state.dirty=false;state.conflict=null;if(state.tableExport?.url)URL.revokeObjectURL(state.tableExport.url);state.tableExport=null;$('bottom').innerHTML='';$('conflictPanel').innerHTML='';renderLogin();}
+/* Best-effort presence. Does not affect saves or display other users' names. */
+let presenceTimer=null,presenceKey='',presenceLatest=null,presenceReceivedAt=0,presenceInFlight=false;
+function paintPresence(){
+ const count=document.getElementById('presenceCount'),badge=document.getElementById('presenceStatus');if(!count||!badge)return;
+ const fresh=presenceLatest&&Date.now()-presenceReceivedAt<120000;
+ count.textContent=fresh?String(presenceLatest.count):'—';
+ badge.classList.toggle('presence-stale',!fresh);
+ badge.title=fresh?'จำนวนบัญชีที่ติดต่อระบบใน 2 นาทีล่าสุด · โดยประมาณ · อัปเดต '+new Date(presenceReceivedAt).toLocaleTimeString('th-TH'):'รออัปเดตจำนวนผู้ใช้งาน · ข้อมูลโดยประมาณใน 2 นาทีล่าสุด';
+}
+function updatePresenceIndicator(value){
+ if(!state.token||!value||!Number.isInteger(value.count)||value.count<0)return;
+ presenceLatest={count:value.count};presenceReceivedAt=Date.now();paintPresence();
+}
+function schedulePresence(delay){clearTimeout(presenceTimer);if(presenceKey)presenceTimer=setTimeout(refreshPresence,delay??(55000+Math.floor(Math.random()*10000)));}
+async function refreshPresence(){
+ const token=state.token;
+ if(!token||!state.boot||presenceKey!==token)return;
+ paintPresence();
+ if(document.visibilityState==='hidden'||presenceInFlight||Date.now()-presenceReceivedAt<50000){schedulePresence();return;}
+ presenceInFlight=true;
+ try{const result=await api('getPresence');if(state.token===token)updatePresenceIndicator(result);}catch(e){paintPresence();}finally{presenceInFlight=false;if(state.token===token)schedulePresence();}
+}
+function startPresence(){
+ if(!state.token||!state.boot)return;
+ if(presenceKey===state.token){paintPresence();return;}
+ clearTimeout(presenceTimer);presenceKey=state.token;paintPresence();schedulePresence(presenceLatest?undefined:1000);
+}
+function stopPresence(){clearTimeout(presenceTimer);presenceTimer=null;presenceKey='';presenceLatest=null;presenceReceivedAt=0;paintPresence();}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&presenceKey){paintPresence();schedulePresence(500+Math.floor(Math.random()*2000));}});
+
+function authClear(){stopPresence();clearTimeout(state.autoTimer);sessionStorage.removeItem('svs-session');state.token='';state.boot=null;state.data=null;state.answers={};state.evidenceByKpi={};state.sponsor=null;state.head=null;state.exportReport=null;state.dirty=false;state.conflict=null;if(state.tableExport?.url)URL.revokeObjectURL(state.tableExport.url);state.tableExport=null;$('bottom').innerHTML='';$('conflictPanel').innerHTML='';renderLogin();}
 function renderLogin(){document.querySelector('header').style.display='none';$('app').innerHTML=`<section class="login-shell"><div class="login-card"><div class="login-story"><span class="login-year">PERFORMANCE REVIEW · 2026</span><div class="login-brand"><img src="${SVS_LOGO}" alt="SVS Swine Veterinary Service"><div><span class="login-eyebrow">SWINE VETERINARY SERVICE</span><h1>SVS<br>Individual KPI</h1></div></div><div class="login-footer">ระบบประเมินผลงานรายบุคคล</div></div><div class="login-form-area"><div class="login-form-title"><h2>เข้าสู่ระบบ</h2><p>ใช้ Username และรหัสผ่านที่ได้รับจากผู้ดูแล</p></div><form id="loginForm"><label for="loginUsername">Username</label><input id="loginUsername" name="username" autocomplete="username" required placeholder="เช่น wittaya.tas" autocapitalize="none" spellcheck="false"><label for="loginPassword">รหัสผ่าน</label><div class="password-wrap"><input id="loginPassword" name="password" type="password" autocomplete="current-password" required><button type="button" class="password-toggle" data-action="toggle-password">แสดง</button></div><p id="loginError" role="alert"></p><button type="submit" class="login-submit">เข้าสู่ระบบ <span>→</span></button></form><div class="connection-help"><button type="button" id="checkConnection">ตรวจสอบการเชื่อมต่อ</button><p id="connectionResult" role="status" aria-live="polite"></p></div><p class="login-help">ลืมรหัสผ่านหรือต้องการความช่วยเหลือ<br>ติดต่อ น.สพ.วิทยา ทะสุยะ ผู้ดูแลระบบ</p></div></div></section>`;}
 
 async function establishSession(){state.boot=await api('getBootstrap');const i=state.boot.identity;state.personId=i.personId;const own=state.boot.members.find(p=>p.PersonId===i.personId);if(own){state.teamId=own.TeamId;setData(await api('loadAssessment',{year:state.boot.roundId,personId:i.personId}));state.mode='member';state.view='dashboard';}else{state.mode='member';state.view='overview';state.data=null;}render();}
 document.addEventListener('submit',async e=>{if(e.target.id!=='loginForm')return;e.preventDefault();const button=e.target.querySelector('button[type=submit]');button.disabled=true;$('loginError').textContent='กำลังตรวจสอบบัญชี…';try{const login=await gasRequest('login',{request:{username:$('loginUsername').value,password:$('loginPassword').value}});$('loginPassword').value='';state.token=login.token;sessionStorage.setItem('svs-session',login.token);await establishSession();}catch(error){if($('loginError'))$('loginError').textContent=error.message||'เข้าสู่ระบบไม่สำเร็จ';}finally{button.disabled=false;}});
-function applyRoleUI(){const i=state.boot.identity;document.querySelector('header').style.display='';$('tabAdmin').style.display=state.boot.isAdmin?'':'none';$('tabHead').style.display=i.canHead?'':'none';$('tabSponsor').style.display=i.canSponsor?'':'none';$('tabMember').style.display=state.boot.members.length?'':'none';$('tabMember').textContent=i.roles.includes('Member')?'ประเมิน KPI ของฉัน':'ข้อมูลสมาชิก';$('signedIdentity').textContent=i.name+' · '+i.username;}
+function applyRoleUI(){const i=state.boot.identity;document.querySelector('header').style.display='';$('tabAdmin').style.display=state.boot.isAdmin?'':'none';$('tabHead').style.display=i.canHead?'':'none';$('tabSponsor').style.display=i.canSponsor?'':'none';$('tabMember').style.display=state.boot.members.length?'':'none';$('tabMember').textContent=i.roles.includes('Member')?'ประเมิน KPI ของฉัน':'ข้อมูลสมาชิก';if($('signedName')){$('signedName').textContent=i.name;$('signedUsername').textContent=i.username;$('signedAvatar').textContent=i.username.slice(0,2).toUpperCase();}else $('signedIdentity').textContent=i.name+' · '+i.username;startPresence();}
 function lockSponsorUI(){if(state.sponsor?.canEdit===false)document.querySelectorAll('[data-sponsor-score],[data-sponsor-notes],[data-action="save-project"]').forEach(el=>el.disabled=true);}
 function permittedPreview(r){if(!state.boot.privateScores)return r;r.kpis=r.kpis.map(k=>k.project?{...k,raw:null,percent:null,grade:null,weighted:null,complete:false,hidden:true,reason:'คะแนนเฉพาะผู้มีสิทธิ์'}:k);r.total=null;r.partial=null;r.complete=false;r.completed=r.kpis.filter(k=>!k.project&&k.applicable&&k.complete).length;r.required=r.kpis.filter(k=>!k.project&&k.applicable).length;r.privateScores=true;return r;}
 function evidenceLink(kpi,id){const url=kpi?.[id];return safeHeadLink(url)?`<br><a href="${esc(url)}" target="_blank" rel="noopener">หลักฐาน ${esc(id)} ↗</a>`:'';}
