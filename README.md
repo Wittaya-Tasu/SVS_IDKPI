@@ -32,3 +32,7 @@ Deploy GitHub Pages from `main`, root. Backend updates are deployed separately i
 - Hidden KPI6 is excluded as before. No formulas, submitted records or backend authorization changed.
 - Fixed literal variable text in the PNG KPI count.
 - `report_view.js` is the report source used by the frontend builder. Report tests: `node report.test.mjs`.
+
+### Display refinement · v3.0.2
+
+The grade column shows numeric grades only. Percentages are rounded to whole numbers for display; grading still uses original precision. Non-applicable KPI summary and detail groups are muted gray in HTML and PNG. The two risk-assessment labels use โครงการส่งเสริม/เล้าขาย, including display of submitted snapshots; stored criteria and scores are untouched.
