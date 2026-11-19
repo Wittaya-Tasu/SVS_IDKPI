@@ -17,10 +17,10 @@ Gmail sign-in is needed only when opening a shared Drive folder.
 
 ## Files
 
-- `index.html`, `app.js`, `styles.css`, `assets/`: static frontend preserving the existing Thai interface.
+- `index.html`, `app.js`, `styles.css`, `svs-logo.png`: static frontend preserving the existing Thai interface.
 - `transport.js`: direct cross-origin GAS transport (`credentials: omit`).
-- `backend/http_gateway.js`: HTTP adapter to add to the existing private GAS project; it delegates to existing authentication and authorization.
+- `http_gateway.js`: HTTP adapter to add to the existing private GAS project; it delegates to existing authentication and authorization.
 - `build_frontend.py`: rebuild using `python3 build_frontend.py /absolute/path/to/private/GAS/source`. The private source must not be committed here.
-- `tests/transport.mjs`: run with `node tests/transport.mjs`.
+- `transport.test.mjs`: run with `node transport.test.mjs`.
 
 Deploy GitHub Pages from `main`, root. Backend updates are deployed separately in Apps Script; this repository does not include the private server source or real assessment data.
