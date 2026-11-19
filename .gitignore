@@ -1,0 +1,8 @@
+*.private.*
+*Accounts_Private*
+accounts.seed.json
+seed.json
+Code.gs
+Code.cloud.*
+.env*
+node_modules/

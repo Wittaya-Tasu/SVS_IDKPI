@@ -1,2 +1,26 @@
-# SVS_IDKPI
-SVS Individual KPI — web frontend for the existing Google Apps Script service.
+# SVS Individual KPI
+
+GitHub Pages frontend for the existing SVS Individual KPI application.
+
+## Architecture
+
+Browser → direct HTTPS POST to Google Apps Script → existing private Google Sheet.
+Evidence files remain in the pre-existing Google Drive folders.
+No Cloudflare service, iframe, JSONP, or Google account cookies are used for KPI API requests.
+Gmail sign-in is needed only when opening a shared Drive folder.
+
+- Existing username/password and role checks stay on the GAS server.
+- Session tokens are sent in POST bodies and kept in browser sessionStorage.
+- Frontend never contains account hashes, passwords, score records, roster seeds, or owner OAuth credentials.
+- API responses must explicitly acknowledge success; uncertain writes are never automatically retried.
+- Draft autosave and submitted-assessment unlocking rules remain unchanged.
+
+## Files
+
+- `index.html`, `app.js`, `styles.css`, `assets/`: static frontend preserving the existing Thai interface.
+- `transport.js`: direct cross-origin GAS transport (`credentials: omit`).
+- `backend/http_gateway.js`: HTTP adapter to add to the existing private GAS project; it delegates to existing authentication and authorization.
+- `build_frontend.py`: rebuild using `python3 build_frontend.py /absolute/path/to/private/GAS/source`. The private source must not be committed here.
+- `tests/transport.mjs`: run with `node tests/transport.mjs`.
+
+Deploy GitHub Pages from `main`, root. Backend updates are deployed separately in Apps Script; this repository does not include the private server source or real assessment data.
