@@ -8,6 +8,7 @@ async function gasRequest(kind,payload={}){
   let envelope;try{envelope=JSON.parse(await response.text());}catch(e){throw new Error('การเชื่อมต่อไม่สำเร็จ กรุณาลองใหม่หรือติดต่อผู้ดูแล');}
   if(!envelope||envelope.protocol!=='svs-kpi-v1'||typeof envelope.ok!=='boolean')throw new Error('รูปแบบคำตอบจากระบบไม่ถูกต้อง');
   if(!envelope.ok)throw new Error(envelope.error||'ดำเนินการไม่สำเร็จ');
+  try{if(typeof updatePresenceIndicator==='function')updatePresenceIndicator(envelope.presence);}catch(e){}
   return envelope.data;
  }catch(e){
   if(e.name==='AbortError')throw new Error('ยังยืนยันผลการดำเนินการไม่ได้ กรุณาโหลดข้อมูลล่าสุดก่อนลองบันทึกอีกครั้ง');
