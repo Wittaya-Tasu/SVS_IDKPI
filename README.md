@@ -36,3 +36,13 @@ Deploy GitHub Pages from `main`, root. Backend updates are deployed separately i
 ### Display refinement · v3.0.2
 
 The grade column shows numeric grades only. Percentages are rounded to whole numbers for display; grading still uses original precision. Non-applicable KPI summary and detail groups are muted gray in HTML and PNG. The two risk-assessment labels use โครงการส่งเสริม/เล้าขาย, including display of submitted snapshots; stored criteria and scores are untouched.
+
+## Presence and navigation · v3.1.0
+
+- Signed-in users see an approximate count of unique accounts active within two minutes. Normal authenticated API responses update it; a visible idle tab refreshes about once a minute with jitter. Hidden tabs stop polling, and stale counts become unknown.
+- Multiple sessions/tabs for one username count once. Logout/closed tabs age out within the window. Cache eviction may temporarily undercount; this is informational and never blocks entry.
+- Only count/time/window metadata is returned. Names, usernames and score data are never returned by presence. Every heartbeat validates the normal app session.
+- The presence map uses GAS ScriptCache only, a short non-blocking lock, no presence sheet and no writes to assessment records. Presence failures do not abort saves. Existing session verification still uses the original server authentication.
+- Account name, username and logout are aligned in a separate account toolbar.
+- Server integration: add `presence.js` to the private server, set `REQUEST_PRESENCE_=presenceUpdate_(actor)` immediately after `authCall` validates its session, and handle `getPresence` before loading KPI definitions. Deploy the updated `http_gateway.js` with this module.
+- Frontend build sources: `header.html`, `header.css`, `presence_client.js`; tests: `node presence.test.mjs`.
