@@ -31,9 +31,12 @@ old="new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve)
 assert old in script;script=script.replace(old,"gasRequest('logout',{token:state.token})")
 old='</form><p class="login-help">'
 assert old in script;script=script.replace(old,'</form><div class="connection-help"><button type="button" id="checkConnection">ตรวจสอบการเชื่อมต่อ</button><p id="connectionResult" role="status" aria-live="polite"></p></div><p class="login-help">',1)
+a=script.index('function makeReport()');b=script.index('\nfunction authClear()',a)
+script=script[:a]+(out/'report_view.js').read_text().rstrip()+script[b:]
 assert 'google.script' not in script
 (out/'app.js').write_text(script)
 html=re.sub(r'<script>.*?</script>','<script src="transport.js" defer></script><script src="app.js" defer></script>',html,flags=re.S)
+html=html.replace('src="app.js"','src="app.js?v=3.0.1"')
 html=html.replace('<head>','<head><title>SVS Individual KPI</title><meta name="referrer" content="no-referrer">',1)
 (out/'index.html').write_text(html)
 (out/'.nojekyll').write_text('')
