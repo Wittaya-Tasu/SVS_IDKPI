@@ -20,7 +20,7 @@ style=re.sub(r'url\([\"\']?data:font/woff2;base64,([A-Za-z0-9+/=]+)[\"\']?\)',fo
 style+='\n.report-card tr.not-applicable>td,.report-card tbody.not-applicable>tr>*{background:#f4f5f6!important;color:#8a9498!important}\n'
 style+='\n'+(out/'header.css').read_text()+'\n'
 (out/'styles.css').write_text(style+'\n.connection-help{margin-top:18px;text-align:center}.connection-help button{background:transparent;color:#496c60;font-size:13px;text-decoration:underline}.connection-help p{font-size:12px;color:#657a75;line-height:1.5}\n')
-html=re.sub(r'<style>.*?</style>','<link rel="stylesheet" href="styles.css?v=3.1.0">',html,flags=re.S)
+html=re.sub(r'<style>.*?</style>','<link rel="stylesheet" href="styles.css?v=3.2.0">',html,flags=re.S)
 script=re.search(r'<script>(.*?)</script>',html,re.S).group(1)
 logo=re.search(r'const SVS_LOGO="data:image/png;base64,([^"]+)";',script)
 (out/'svs-logo.png').write_bytes(base64.b64decode(logo.group(1)))
@@ -40,11 +40,21 @@ script=script[:a]+(out/'report_view.js').read_text().rstrip()+script[b:]
 script=script.replace('function authClear(){','function authClear(){stopPresence();',1)
 script=script.replace("$('signedIdentity').textContent=i.name+' · '+i.username;", "if($('signedName')){$('signedName').textContent=i.name;$('signedUsername').textContent=i.username;$('signedAvatar').textContent=i.username.slice(0,2).toUpperCase();}else $('signedIdentity').textContent=i.name+' · '+i.username;startPresence();",1)
 script=script.replace('function authClear()', (out/'presence_client.js').read_text()+'\nfunction authClear()',1)
+script=script.replace("function authClear(){stopPresence();", "function authClear(){state.progress=null;stopPresence();",1)
+script=script.replace("const i=state.boot.identity;document.querySelector", "const i=state.boot.identity;if($('tabProgress')){$('tabProgress').style.display=i.canProgress?'':'none';$('tabProgress').classList.toggle('active',state.mode==='progress');}document.querySelector",1)
+script=script.replace("if(state.mode==='head'){renderHead();return;}", "if(state.mode==='progress'){renderProgress();return;}if(state.mode==='head'){renderHead();return;}",1)
+script=script.replace("if(await authUiAction(a,b))return;", "if(await progressAction(a,b))return;if(await authUiAction(a,b))return;",1)
+script=script.replace("state.boot.isAdmin&&state.data.assessment.Status==='Submitted'", "state.data.canUnlock&&state.data.assessment.Status==='Submitted'")
+script=script.replace('เปิดให้สมาชิกแก้ไข','เปิดให้แก้ไข')
+script=script.replace('เปิดแบบประเมินนี้ให้สมาชิกแก้ไขอีกครั้ง?', 'เปิดแบบประเมินนี้ให้แก้ไขอีกครั้ง? ต้องส่งผลใหม่เพื่อให้คะแนนนำไปสรุปของทีม')
+script=script.replace("state.mode=state.mode==='head'?'head':'member';", "state.mode=state.mode==='progress'&&state.boot.identity.canProgress?'progress':state.mode==='head'?'head':'member';state.progress=null;")
+script=script.replace('<td><b>${esc(p.name)}</b></td><td>${p.group', '<td><b>${esc(p.name)}</b>${state.boot.isAdmin||state.boot.identity.roles.includes(\'Head\')?`<button class="alt edit-member-button" data-action="edit-team-member" data-person="${esc(p.personId)}">ดู / แก้ไข KPI</button>`:\'\'}</td><td>${p.group')
+script+='\n'+(out/'progress_client.js').read_text()+'\n'
 html=re.sub(r'<header>.*?</header>',(out/'header.html').read_text().strip(),html,count=1,flags=re.S)
 assert 'google.script' not in script
 (out/'app.js').write_text(script)
-html=re.sub(r'<script>.*?</script>','<script src="transport.js?v=3.1.0" defer></script><script src="app.js" defer></script>',html,flags=re.S)
-html=html.replace('src="app.js"','src="app.js?v=3.1.0"')
+html=re.sub(r'<script>.*?</script>','<script src="transport.js?v=3.2.0" defer></script><script src="app.js" defer></script>',html,flags=re.S)
+html=html.replace('src="app.js"','src="app.js?v=3.2.0"')
 html=html.replace('<head>','<head><title>SVS Individual KPI</title><meta name="referrer" content="no-referrer">',1)
 (out/'index.html').write_text(html)
 (out/'.nojekyll').write_text('')
