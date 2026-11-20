@@ -1,0 +1,13 @@
+function renderProgress(){
+ const p=state.progress,valid=p&&p.roundId===state.boot.roundId;
+ $('app').innerHTML=`<section class="intro row"><div><div class="kicker">รอบประเมิน ${esc(state.boot.roundId)}</div><h1>ความคืบหน้าการประเมินทั้ง 6 ทีม</h1><p class="muted">นับเฉพาะสมาชิกจริง ไม่รวมบัญชีทดสอบ</p></div><button data-action="load-progress">รีเฟรชความคืบหน้า</button></section>${valid?`<section class="overview-sheet"><div class="overview-title">ส่งผลแล้ว ${p.totals.submitted} / ${p.totals.total} คน · ครบรวม Sponsor ${p.totals.complete} คน</div><div class="tablewrap"><table class="progress-table"><thead><tr><th>ทีม</th><th>สมาชิก</th><th>ยังไม่เริ่ม</th><th>กำลังกรอก</th><th>กรอกส่วนตนเองครบ</th><th>ส่งผลแล้ว</th><th>ครบรวม Sponsor</th><th>ความคืบหน้าการส่ง</th></tr></thead><tbody>${p.teams.map(t=>`<tr><th scope="row">${esc(t.teamName)}</th>${['total','notStarted','inProgress','selfComplete','submitted','complete'].map(k=>`<td>${t[k]}</td>`).join('')}<td><progress max="${t.total||1}" value="${t.submitted}" aria-label="ส่งผลแล้ว ${t.submitted} จาก ${t.total} คน"></progress><span>${t.total?Math.round(t.submitted/t.total*100):0}%</span></td></tr>`).join('')}</tbody><tfoot><tr><th>รวม</th>${['total','notStarted','inProgress','selfComplete','submitted','complete'].map(k=>`<th>${p.totals[k]}</th>`).join('')}<th>${p.totals.total?Math.round(p.totals.submitted/p.totals.total*100):0}%</th></tr></tfoot></table></div></section><p class="muted">ข้อมูลล่าสุด ${dateText(p.generatedAt)} · “กรอกส่วนตนเองครบ” รวมผู้ที่ส่งผลแล้ว · “ครบรวม Sponsor” ต้องส่งผลและมีคะแนนครบทุก KPI ที่ใช้ประเมิน</p>`:'<section class="box">กดรีเฟรชเพื่อโหลดความคืบหน้า</section>'}`;
+}
+async function progressAction(a,b){
+ if(!['mode-progress','load-progress','edit-team-member'].includes(a))return false;
+ if(state.dirty){await saveCurrent(false);if(state.dirty||state.conflict||state.saveError)return true;}
+ if(state.adminDirty){if(!confirm('ฉบับร่าง Admin ยังไม่บันทึก ต้องการออกจากหน้านี้หรือไม่?'))return true;state.adminDirty=false;}
+ state.tableExport=null;
+ if(a==='edit-team-member'){await task(async()=>{const person=state.boot.members.find(p=>p.PersonId===b.dataset.person);if(!person)throw Error('ไม่มีสิทธิ์เปิดสมาชิกนี้');const data=await api('loadAssessment',{personId:person.PersonId,year:state.boot.roundId});state.personId=person.PersonId;state.teamId=data.assessment.TeamId||person.TeamId;setData(data);state.mode='member';state.view='dashboard';state.activeKpi=null;render();window.scrollTo(0,0);});return true;}
+ if(!state.boot.identity.canProgress)return true;
+ state.mode='progress';render();await task(async()=>{state.progress=await api('getProgressPanel',{year:state.boot.roundId});render();});return true;
+}

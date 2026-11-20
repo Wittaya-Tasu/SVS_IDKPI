@@ -1,0 +1,14 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const root=new URL('.',import.meta.url),src=fs.readFileSync(new URL('progress_client.js',root),'utf8'),app=fs.readFileSync(new URL('app.js',root),'utf8');
+const totals={total:25,notStarted:5,inProgress:4,selfComplete:16,submitted:14,complete:10};
+const el={innerHTML:''},calls=[];let saves=0;
+const state={boot:{roundId:'2026',identity:{canProgress:true},members:[{PersonId:'M01',TeamId:'T01'}]},progress:{roundId:'2026',generatedAt:'now',totals,teams:[{teamId:'T01',teamName:'ทีมตัวอย่าง',...totals}]},dirty:false};
+const ctx=vm.createContext({state,$:()=>el,esc:x=>String(x??''),dateText:x=>x,task:async fn=>fn(),api:async(fn,args)=>{calls.push({fn,args});return fn==='loadAssessment'?{assessment:{TeamId:'T01'}}:state.progress;},render(){},saveCurrent:async()=>{saves++;},setData:x=>state.data=x,window:{scrollTo(){}},confirm:()=>true});vm.runInContext(src,ctx);
+ctx.renderProgress();assert.match(el.innerHTML,/ส่งผลแล้ว 14 \/ 25/);assert.match(el.innerHTML,/56%/);assert.match(el.innerHTML,/กรอกส่วนตนเองครบ/);assert.match(el.innerHTML,/ครบรวม Sponsor/);assert.ok(!el.innerHTML.includes('undefined'));
+await ctx.progressAction('mode-progress',{});assert.equal(calls.at(-1).fn,'getProgressPanel');assert.equal(calls.at(-1).args.year,'2026');
+state.dirty=true;const count=calls.length;await ctx.progressAction('mode-progress',{});assert.equal(calls.length,count);assert.equal(saves,1);state.dirty=false;
+await ctx.progressAction('edit-team-member',{dataset:{person:'M01'}});assert.equal(state.personId,'M01');assert.equal(state.view,'dashboard');assert.equal(state.data.assessment.TeamId,'T01');
+state.boot.identity.canProgress=false;const n=calls.length;await ctx.progressAction('mode-progress',{});assert.equal(calls.length,n);
+state.boot.roundId='2027';ctx.renderProgress();assert.match(el.innerHTML,/กดรีเฟรช/);assert.ok(!el.innerHTML.includes('56%'));
+assert.match(app,/state.data.canUnlock&&state.data.assessment.Status==='Submitted'/);assert.match(app,/readonly\(\).*?Status==='Submitted'/);assert.match(app,/ดู \/ แก้ไข KPI/);assert.match(app,/state.progress=null/);
+console.log('PROGRESS UI: render, exact year, role visibility, dirty-save guard, own-member navigation, stale year and submitted lock passed');

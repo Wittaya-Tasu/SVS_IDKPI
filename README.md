@@ -46,3 +46,13 @@ The grade column shows numeric grades only. Percentages are rounded to whole num
 - Account name, username and logout are aligned in a separate account toolbar.
 - Server integration: add `presence.js` to the private server, set `REQUEST_PRESENCE_=presenceUpdate_(actor)` immediately after `authCall` validates its session, and handle `getPresence` before loading KPI definitions. Deploy the updated `http_gateway.js` with this module.
 - Frontend build sources: `header.html`, `header.css`, `presence_client.js`; tests: `node presence.test.mjs`.
+
+
+## v3.2.0 — prepared for deployment
+Team heads can open the own-team member from the team table, explicitly reopen submitted assessments, edit self-assessed KPIs and resubmit. Backend must enforce year-specific team ownership. KPI6 remains assigned-Sponsor/Admin only.
+
+The new progress tab is available only to the Admin and the two specifically authorized executives. It shows aggregate team counts only: not started, in progress, self-complete, submitted and complete including Sponsor. Demo accounts are excluded.
+
+Requires backend v3.2.0. Keep this feature branch unmerged until expanded editing access is confirmed and the corresponding backend is deployed. Production remains v3.1.0 until then.
+
+Validation: `node progress.test.mjs`, `node report.test.mjs`, `node presence.test.mjs`, `node transport.test.mjs`. Private backend access tests and regression suite are maintained outside this public repository.
