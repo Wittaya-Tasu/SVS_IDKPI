@@ -48,11 +48,11 @@ The grade column shows numeric grades only. Percentages are rounded to whole num
 - Frontend build sources: `header.html`, `header.css`, `presence_client.js`; tests: `node presence.test.mjs`.
 
 
-## v3.2.0 — prepared for deployment
+## v3.2.0 — production release
 Team heads can open the own-team member from the team table, explicitly reopen submitted assessments, edit self-assessed KPIs and resubmit. Backend must enforce year-specific team ownership. KPI6 remains assigned-Sponsor/Admin only.
 
 The new progress tab is available only to the Admin and the two specifically authorized executives. It shows aggregate team counts only: not started, in progress, self-complete, submitted and complete including Sponsor. Demo accounts are excluded.
 
-Requires backend v3.2.0. Keep this feature branch unmerged until expanded editing access is confirmed and the corresponding backend is deployed. Production remains v3.1.0 until then.
+Backend v3.2.0 deployed as GAS Version17 on 20 November 2026. Expanded own-team editing access was confirmed by the owner. Frontend released through PR #1; existing URL and accounts retained.
 
 Validation: `node progress.test.mjs`, `node report.test.mjs`, `node presence.test.mjs`, `node transport.test.mjs`. Private backend access tests and regression suite are maintained outside this public repository.
